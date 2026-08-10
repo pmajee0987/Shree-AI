@@ -1,0 +1,67 @@
+# Codemagic CI/CD Configuration for Shree App
+workflows:
+  web-app:
+    name: Shree Web App Build
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      node: 22
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+        - pattern: 'master'
+    scripts:
+      - name: Install dependencies
+        script: |
+          rm -f package-lock.json
+          npm install --include=optional
+          npm install --no-save @rollup/rollup-darwin-arm64 @esbuild/darwin-arm64
+      - name: Type check and lint
+        script: |
+          npm run lint
+      - name: Build Web Application
+        script: |
+          npm run build
+    artifacts:
+      - dist/**
+
+  android-app:
+    name: Shree Android APK Build
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      node: 22
+      java: 21
+    scripts:
+      - name: Install dependencies
+        script: |
+          rm -f package-lock.json
+          npm install --include=optional
+          npm install --no-save @rollup/rollup-darwin-arm64 @esbuild/darwin-arm64
+      - name: Build Web Bundle
+        script: |
+          npm run build
+      - name: Build Android APK (Capacitor)
+        script: |
+          set -e
+          mkdir -p android/gradle/wrapper
+          if [ ! -f "android/gradle/wrapper/gradle-wrapper.jar" ] || ! unzip -t android/gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
+            echo "Repairing corrupt gradle-wrapper.jar..."
+            curl -sSL "https://raw.githubusercontent.com/android/architecture-samples/main/gradle/wrapper/gradle-wrapper.jar" -o android/gradle/wrapper/gradle-wrapper.jar
+          fi
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+          cd android
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || ! unzip -t gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
+            echo "Re-verifying gradle-wrapper.jar in android directory..."
+            curl -sSL "https://raw.githubusercontent.com/android/architecture-samples/main/gradle/wrapper/gradle-wrapper.jar" -o gradle/wrapper/gradle-wrapper.jar
+          fi
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - dist/**
+      - android/app/build/outputs/apk/**/*.apk

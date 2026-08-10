@@ -1,0 +1,12 @@
+{
+  "name": "Remix Remix Shree",
+  "description": "A sweet and sassy animated ai Shree",
+  "requestFramePermissions": [
+    "microphone",
+    "camera",
+    "display-capture"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
